@@ -87,6 +87,7 @@ select
      population , 
      date, 
      Max(total_cases) as HighestInfectionCount, 
+    
      Max((total_cases/NULLIF(population,0)))*100 as PercentPopulationInfected
 from PortfolioProjects..CovidDeaths
 --Where country like '%states%'
@@ -94,6 +95,17 @@ where continent is not null
 Group by country, Population, date
 order by PercentPopulationInfected desc;
 
+
+
+-----SELECT 
+    ---country,
+    ---date,
+    ---new_cases,
+    ---(CAST(new_cases AS FLOAT) / NULLIF(population, 0)) * 100 
+       --- AS DailyInfectionRate
+--FROM PortfolioProjects..CovidDeaths
+--WHERE continent IS NOT NULL
+--ORDER BY country, date;
 
 --5 Vaccine Rollout Tracking (Total Population vs Total Cumulative Vaccinations)
 
@@ -118,7 +130,7 @@ order by 1,2,3;
 --Where location like '%states%'
 ---where continent is not null 
 --Group By date
-order by 1,2
+--order by 1,2
 
 
 
