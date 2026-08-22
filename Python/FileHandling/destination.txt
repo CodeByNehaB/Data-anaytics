@@ -1,0 +1,10 @@
+hello world!
+The 4 Common File Modes
+When opening a file, you must tell Python what you intend to do with it by choosing a mode:
+1. 'r' (Read): Default mode. Opens a file for reading. Crashes if the file does not exist.
+2. 'w' (Write): Opens a file for writing. Warning: It completely empties the file if it already exists, or creates a new one if it doesn't.
+3. 'a' (Append): Adds new data to the very end of an existing file. It does not overwrite old data.
+4. 'x' (Create): Creates a brand new file. Crashes if a file with that name already exists.i added extra datai added extra datai added extra data
+First line
+second line
+Thirs line
