@@ -280,63 +280,6 @@ def compute_biggest_margins(df, top_n=10):
     Business Question 12: biggest winning margins, by runs and by wickets
     (wickets uses balls-remaining as a tiebreaker for the 10-wicket ties).
     """
-    second_innings_balls = df[df['innings'] == 2].groupby('match_id')['team_balls'].max()
-
-    match_level = df.groupby('match_id').agg(
-        season=('season_clean', 'first'), won_by=('match_won_by_clean', 'first'),
-        win_margin=('win_margin', 'first'), win_type=('win_type', 'first'),
-    ).reset_index()
-    match_level['balls_remaining'] = 120 - match_level['match_id'].map(second_innings_balls)
-
-    biggest_runs = match_level[match_level['win_type'] == 'runs'].sort_values('win_margin', ascending=False).head(top_n)
-    biggest_wickets = match_level[(match_level['win_type'] == 'wickets') & (match_level['win_margin'] == 10)].sort_values('balls_remaining', ascending=False).head(top_n)
-    closest = match_level.dropna(subset=['win_margin']).sort_values('win_margin').head(top_n)
-
-    return biggest_runs, biggest_wickets, closest
-
-def compute_biggest_margins(df, top_n=10):
-    """
-    Business Question 12: biggest winning margins, by runs and by wickets
-    (wickets uses balls-remaining as a tiebreaker for the 10-wicket ties).
-    """
-    second_innings_balls = df[df['innings'] == 2].groupby('match_id')['team_balls'].max()
-
-    match_level = df.groupby('match_id').agg(
-        season=('season_clean', 'first'), won_by=('matches_won_by_clean', 'first'),
-        win_margin=('win_margin', 'first'), win_type=('win_type', 'first'),
-    ).reset_index()
-    match_level['balls_remaining'] = 120 - match_level['match_id'].map(second_innings_balls)
-
-    biggest_runs = match_level[match_level['win_type'] == 'runs'].sort_values('win_margin', ascending=False).head(top_n)
-    biggest_wickets = match_level[(match_level['win_type'] == 'wickets') & (match_level['win_margin'] == 10)].sort_values('balls_remaining', ascending=False).head(top_n)
-    closest = match_level.dropna(subset=['win_margin']).sort_values('win_margin').head(top_n)
-
-    return biggest_runs, biggest_wickets, closest
-
-def compute_biggest_margins(df, top_n=10):
-    """
-    Business Question 12: biggest winning margins, by runs and by wickets
-    (wickets uses balls-remaining as a tiebreaker for the 10-wicket ties).
-    """
-    second_innings_balls = df[df['innings'] == 2].groupby('match_id')['team_balls'].max()
-
-    match_level = df.groupby('match_id').agg(
-        season=('season_clean', 'first'), won_by=('match_won_by_clean', 'first'),
-        win_margin=('win_margin', 'first'), win_type=('win_type', 'first'),
-    ).reset_index()
-    match_level['balls_remaining'] = 120 - match_level['match_id'].map(second_innings_balls)
-
-    biggest_runs = match_level[match_level['win_type'] == 'runs'].sort_values('win_margin', ascending=False).head(top_n)
-    biggest_wickets = match_level[(match_level['win_type'] == 'wickets') & (match_level['win_margin'] == 10)].sort_values('balls_remaining', ascending=False).head(top_n)
-    closest = match_level.dropna(subset=['win_margin']).sort_values('win_margin').head(top_n)
-
-    return biggest_runs, biggest_wickets, closest
-
-def compute_biggest_margins(df, top_n=10):
-    """
-    Business Question 12: biggest winning margins, by runs and by wickets
-    (wickets uses balls-remaining as a tiebreaker for the 10-wicket ties).
-    """
     df = df.copy()
     df['match_won_by_clean'] = df['match_won_by'].replace(TEAM_REBRAND_NAME)
 
@@ -353,3 +296,463 @@ def compute_biggest_margins(df, top_n=10):
     closest = match_level.dropna(subset=['win_margin']).sort_values('win_margin').head(top_n)
 
     return biggest_runs, biggest_wickets, closest
+
+def compute_close_matches(df, runs_cutoff=10, wickets_cutoff=1):
+    """
+    Business Question 13: closest matches, and which teams/venues appear
+    most often among them (as a % of their total matches, not raw count).
+    """
+    match_level = df.groupby('match_id').agg(
+        venue=('venue_clean', 'first'), win_margin=('win_margin', 'first'), win_type=('win_type', 'first'),
+        teams=('batting_team_clean', lambda x: sorted(set(x))),
+    ).reset_index()
+
+    close = match_level[((match_level['win_type'] == 'runs') & (match_level['win_margin'] <= runs_cutoff)) |
+                         ((match_level['win_type'] == 'wickets') & (match_level['win_margin'] <= wickets_cutoff))]
+
+    team_close = pd.Series([t for teams in close['teams'] for t in teams]).value_counts()
+    team_total = pd.Series([t for teams in match_level.dropna(subset=['win_margin'])['teams'] for t in teams]).value_counts()
+    team_stats = pd.DataFrame({'close_matches': team_close, 'total_matches': team_total})
+    team_stats['pct_close'] = (team_stats['close_matches'] / team_stats['total_matches'] * 100).round(1)
+
+    venue_close = close['venue'].value_counts()
+    return team_stats.sort_values('pct_close', ascending=False), venue_close
+
+def compute_scoring_trend(df):
+    """
+    Business Question 14: average first-innings score by season, plus a
+    correlation test to check whether the trend is statistically real.
+    """
+    from scipy import stats
+
+    first_innings = df[df['innings'] == 1].groupby('match_id').agg(
+        season=('season_clean', 'first'),
+        final_score=('team_runs', 'max')
+    ).reset_index()
+
+    by_season = first_innings.groupby('season')['final_score'].mean().round(1)
+    corr, pval = stats.pearsonr(first_innings['season'], first_innings['final_score'])
+    return by_season, corr, pval
+
+def compute_powerplay_vs_death(df):
+    """
+    Business Question 15: powerplay (overs 1-6) vs death-overs (16-20)
+    scoring, overall and by season.
+    """
+    def phase_run_rate(phase_df):
+        legal_balls = (phase_df['valid_ball'] == 1).sum()
+        return round(phase_df['runs_total'].sum() / (legal_balls / 6), 2)
+
+    pp, death = df[df['over'] <= 5], df[df['over'] >= 15]
+    overall = {'powerplay_rr': phase_run_rate(pp), 'death_rr': phase_run_rate(death)}
+
+    rows = []
+    for s in sorted(df['season_clean'].unique()):
+        s_pp = df[(df['over'] <= 5) & (df['season_clean'] == s)]
+        s_death = df[(df['over'] >= 15) & (df['season_clean'] == s)]
+        rows.append({'season': s, 'powerplay_rr': phase_run_rate(s_pp), 'death_rr': phase_run_rate(s_death)})
+    by_season = pd.DataFrame(rows).set_index('season')
+
+    return overall, by_season
+
+def compute_batting_average_and_boundaries(df, min_dismissals=30, top_n=15):
+    """
+    Phase 7 EDA: batting average (runs per dismissal - NOT runs per innings,
+    which Question 8 already covered) and boundary counts.
+    """
+    runs = df.groupby('batter')['runs_batter'].sum()
+    dismissals = df.groupby('batter')['striker_out'].sum()
+    fours = df[df['runs_batter'] == 4].groupby('batter').size()
+    sixes = df[df['runs_batter'] == 6].groupby('batter').size()
+
+    stats_df = pd.DataFrame({'runs': runs, 'dismissals': dismissals, 'fours': fours, 'sixes': sixes}).fillna(0)
+    stats_df = stats_df[stats_df['dismissals'] >= min_dismissals].copy()
+    stats_df['batting_average'] = (stats_df['runs'] / stats_df['dismissals']).round(1)
+    stats_df['boundary_runs'] = stats_df['fours'] * 4 + stats_df['sixes'] * 6
+    stats_df['boundary_pct_of_runs'] = (stats_df['boundary_runs'] / stats_df['runs'] * 100).round(1)
+
+    return stats_df.sort_values('batting_average', ascending=False).head(top_n)
+
+def compute_team_scoring_profile(df):
+    """
+    Phase 7 EDA: team-level average runs scored/conceded and wickets
+    lost/taken per innings (not win % - Question 1 already covers that).
+    Restricted to regular innings (1-2); Super Overs excluded since a
+    1-over mini-innings would badly skew a per-innings average.
+    """
+    regular = df[df['innings'] <= 2]
+    innings_final = regular.groupby(['match_id', 'innings']).agg(
+        batting_team=('batting_team_clean', 'first'),
+        bowling_team=('bowling_team_clean', 'first'),
+        final_runs=('team_runs', 'max'),
+        final_wkts=('team_wicket', 'max'),
+    ).reset_index()
+
+    batting_side = innings_final.groupby('batting_team').agg(
+        avg_runs_scored=('final_runs', 'mean'), avg_wkts_lost=('final_wkts', 'mean')
+    ).round(1)
+    bowling_side = innings_final.groupby('bowling_team').agg(
+        avg_runs_conceded=('final_runs', 'mean'), avg_wkts_taken=('final_wkts', 'mean')
+    ).round(1)
+
+    team_profile = batting_side.join(bowling_side)
+    team_profile['run_diff'] = (team_profile['avg_runs_scored'] - team_profile['avg_runs_conceded']).round(1)
+    return team_profile.sort_values('run_diff', ascending=False)
+
+def compute_score_records(df, top_n=5):
+    """Phase 7 EDA: highest and lowest single-innings scores (completed matches only)."""
+    decided_matches = df[df['win_outcome'].notna()]['match_id'].unique()
+    regular = df[(df['innings'] <= 2) & (df['match_id'].isin(decided_matches))]
+
+    innings_final = regular.groupby(['match_id', 'innings']).agg(
+        team=('batting_team_clean', 'first'), season=('season_clean', 'first'), score=('team_runs', 'max')
+    ).reset_index()
+
+    highest = innings_final.sort_values('score', ascending=False).head(top_n)[['team', 'season', 'score']]
+    lowest = innings_final.sort_values('score').head(top_n)[['team', 'season', 'score']]
+    return highest, lowest
+
+
+def compute_season_overview(df):
+    """Phase 7 EDA: matches played and average wickets per match, by season."""
+    matches_by_season = df.groupby('season_clean')['match_id'].nunique()
+    wkts_by_season = df[df['innings'] <= 2].groupby(['season_clean', 'match_id', 'innings'])['team_wicket'].max().groupby('season_clean').mean().round(2)
+    return pd.DataFrame({'matches': matches_by_season, 'avg_wickets_per_innings': wkts_by_season})
+
+def compute_team_momentum(df):
+    """
+    Phase 8: does winning the previous match predict winning the next one?
+    Returns (baseline_pct, after_win_pct, after_loss_pct, chi2, p_value).
+    """
+    from scipy.stats import chi2_contingency
+
+    match_level = df.groupby('match_id').agg(
+        date=('date', 'first'), won_by=('match_won_by_clean', 'first'),
+        teams=('batting_team_clean', lambda x: sorted(set(x))),
+    ).reset_index()
+    match_level['date'] = pd.to_datetime(match_level['date'], format='%d-%m-%Y')
+    decided = match_level[(match_level['won_by'] != 'Unknown') & (match_level['teams'].apply(len) == 2)].sort_values('date')
+
+    rows = [{'team': t, 'date': row['date'], 'won': t == row['won_by']}
+            for _, row in decided.iterrows() for t in row['teams']]
+    team_form = pd.DataFrame(rows).sort_values(['team', 'date'])
+    team_form['prev_result'] = team_form.groupby('team')['won'].shift(1)
+
+    baseline = round(team_form['won'].mean() * 100, 1)
+    after_win = round(team_form[team_form['prev_result'] == True]['won'].mean() * 100, 1)
+    after_loss = round(team_form[team_form['prev_result'] == False]['won'].mean() * 100, 1)
+
+    valid = team_form.dropna(subset=['prev_result'])
+    chi2, p, dof, exp = chi2_contingency(pd.crosstab(valid['prev_result'], valid['won']))
+    return baseline, after_win, after_loss, round(chi2, 3), round(p, 4)
+
+def compute_team_momentum(df):
+    """
+    Phase 8: does winning the previous match predict winning the next one?
+    Returns (baseline_pct, after_win_pct, after_loss_pct, chi2, p_value).
+    """
+    from scipy.stats import chi2_contingency
+
+    df = df.copy()
+    df['match_won_by_clean'] = df['match_won_by'].replace(TEAM_REBRAND_NAME)
+
+    match_level = df.groupby('match_id').agg(
+        date=('date', 'first'), won_by=('match_won_by_clean', 'first'),
+        teams=('batting_team_clean', lambda x: sorted(set(x))),
+    ).reset_index()
+    match_level['date'] = pd.to_datetime(match_level['date'], format='%d-%m-%Y')
+    decided = match_level[(match_level['won_by'] != 'Unknown') & (match_level['teams'].apply(len) == 2)].sort_values('date')
+
+    rows = [{'team': t, 'date': row['date'], 'won': t == row['won_by']}
+            for _, row in decided.iterrows() for t in row['teams']]
+    team_form = pd.DataFrame(rows).sort_values(['team', 'date'])
+    team_form['prev_result'] = team_form.groupby('team')['won'].shift(1)
+
+    baseline = round(team_form['won'].mean() * 100, 1)
+    after_win = round(team_form[team_form['prev_result'] == True]['won'].mean() * 100, 1)
+    after_loss = round(team_form[team_form['prev_result'] == False]['won'].mean() * 100, 1)
+
+    valid = team_form.dropna(subset=['prev_result'])
+    chi2, p, dof, exp = chi2_contingency(pd.crosstab(valid['prev_result'], valid['won']))
+    return baseline, after_win, after_loss, round(chi2, 3), round(p, 4)
+
+def compute_toss_chase_significance(df):
+    """
+    Phase 8: formal significance tests for toss impact and chase advantage.
+    """
+    from scipy.stats import binomtest, chi2_contingency
+
+    df = df.copy()
+    df['toss_winner_clean'] = df['toss_winner'].replace(TEAM_REBRAND_NAME)
+    df['match_won_by_clean'] = df['match_won_by'].replace(TEAM_REBRAND_NAME)
+
+    match_level = df.groupby('match_id').agg(
+        toss_winner=('toss_winner_clean', 'first'), toss_decision=('toss_decision', 'first'),
+        won_by=('match_won_by_clean', 'first'),
+    ).reset_index()
+    decided = match_level[match_level['won_by'] != 'Unknown'].copy()
+    decided['toss_winner_won'] = decided['toss_winner'] == decided['won_by']
+
+    n_toss_wins, n_total = decided['toss_winner_won'].sum(), len(decided)
+    test1_p = binomtest(n_toss_wins, n_total, 0.5).pvalue
+
+    chi2, test2_p, _, _ = chi2_contingency(pd.crosstab(decided['toss_decision'], decided['toss_winner_won']))
+
+    second_innings_team = df[df['innings'] == 2].groupby('match_id')['batting_team_clean'].first()
+    match_level['team_bat_2nd'] = match_level['match_id'].map(second_innings_team)
+    decided3 = match_level.dropna(subset=['team_bat_2nd'])
+    decided3 = decided3[decided3['won_by'] != 'Unknown'].copy()
+    decided3['chase_won'] = decided3['team_bat_2nd'] == decided3['won_by']
+    test3_p = binomtest(decided3['chase_won'].sum(), len(decided3), 0.5).pvalue
+
+    return {
+        'toss_winner_win_pct': round(n_toss_wins / n_total * 100, 1), 'test1_p': round(test1_p, 4),
+        'decision_chi2': round(chi2, 3), 'test2_p': round(test2_p, 6),
+        'chase_win_pct': round(decided3['chase_won'].mean() * 100, 1), 'test3_p': round(test3_p, 4),
+    }
+
+def compute_team_momentum(df):
+    """
+    Phase 8: does winning the previous match predict winning the next one?
+    Returns (baseline_pct, after_win_pct, after_loss_pct, chi2, p_value).
+    """
+    from scipy.stats import chi2_contingency
+
+    df = df.copy()
+    df['match_won_by_clean'] = df['match_won_by'].replace(TEAM_REBRAND_NAME)
+
+    match_level = df.groupby('match_id').agg(
+        date=('date', 'first'), won_by=('match_won_by_clean', 'first'),
+        teams=('batting_team_clean', lambda x: sorted(set(x))),
+    ).reset_index()
+    match_level['date'] = pd.to_datetime(match_level['date'], format='%Y-%m-%d')
+    decided = match_level[(match_level['won_by'] != 'Unknown') & (match_level['teams'].apply(len) == 2)].sort_values('date')
+
+    rows = [{'team': t, 'date': row['date'], 'won': t == row['won_by']}
+            for _, row in decided.iterrows() for t in row['teams']]
+    team_form = pd.DataFrame(rows).sort_values(['team', 'date'])
+    team_form['prev_result'] = team_form.groupby('team')['won'].shift(1)
+
+    baseline = round(team_form['won'].mean() * 100, 1)
+    after_win = round(team_form[team_form['prev_result'] == True]['won'].mean() * 100, 1)
+    after_loss = round(team_form[team_form['prev_result'] == False]['won'].mean() * 100, 1)
+
+    valid = team_form.dropna(subset=['prev_result'])
+    chi2, p, dof, exp = chi2_contingency(pd.crosstab(valid['prev_result'], valid['won']))
+    return baseline, after_win, after_loss, round(chi2, 3), round(p, 4)
+
+def compute_venue_toss_advantage(df, min_per_decision=10):
+    """
+    Phase 8: does the field-first advantage hold at every venue, or do
+    some venues actually favor batting first?
+    """
+    df = df.copy()
+    df['toss_winner_clean'] = df['toss_winner'].replace(TEAM_REBRAND_NAME)
+    df['match_won_by_clean'] = df['match_won_by'].replace(TEAM_REBRAND_NAME)
+
+    match_level = df.groupby('match_id').agg(
+        venue=('venue_clean', 'first'), toss_winner=('toss_winner_clean', 'first'),
+        toss_decision=('toss_decision', 'first'), won_by=('match_won_by_clean', 'first'),
+    ).reset_index()
+    decided = match_level[match_level['won_by'] != 'Unknown'].copy()
+    decided['toss_winner_won'] = decided['toss_winner'] == decided['won_by']
+
+    venue_field = decided[decided['toss_decision'] == 'field'].groupby('venue')['toss_winner_won'].agg(['mean', 'count'])
+    venue_bat = decided[decided['toss_decision'] == 'bat'].groupby('venue')['toss_winner_won'].agg(['mean', 'count'])
+    venue_field.columns, venue_bat.columns = ['field_win_pct', 'field_n'], ['bat_win_pct', 'bat_n']
+    combined = venue_field.join(venue_bat, how='outer')
+    combined['field_win_pct'] = (combined['field_win_pct'] * 100).round(1)
+    combined['bat_win_pct'] = (combined['bat_win_pct'] * 100).round(1)
+
+    qualified = combined[(combined['field_n'] >= min_per_decision) & (combined['bat_n'] >= min_per_decision)].copy()
+    qualified['field_advantage'] = qualified['field_win_pct'] - qualified['bat_win_pct']
+    return qualified.sort_values('field_advantage')
+
+def compute_powerplay_death_ttest(df):
+    """
+    Phase 9, Test 3: paired t-test - is death-overs run rate genuinely
+    higher than powerplay run rate, innings by innings?
+    """
+    from scipy.stats import ttest_rel
+
+    def phase_rr(sub):
+        legal = (sub['valid_ball'] == 1).sum()
+        return sub['runs_total'].sum() / (legal / 6) if legal > 0 else None
+
+    pp_by_innings = df[df['over'] <= 5].groupby(['match_id', 'innings']).apply(phase_rr)
+    death_by_innings = df[df['over'] >= 15].groupby(['match_id', 'innings']).apply(phase_rr)
+
+    paired = pd.DataFrame({'pp_rr': pp_by_innings, 'death_rr': death_by_innings}).dropna()
+    t_stat, p_val = ttest_rel(paired['death_rr'], paired['pp_rr'])
+    mean_diff = round((paired['death_rr'] - paired['pp_rr']).mean(), 2)
+    return round(t_stat, 3), p_val, mean_diff, len(paired)
+
+import importlib
+import analysis
+importlib.reload(analysis)
+from analysis import compute_powerplay_death_ttest
+
+t_stat, p_val, mean_diff, n = compute_powerplay_death_ttest(df)
+print(f"t={t_stat}, p={p_val}, mean diff={mean_diff} runs/over, n={n} innings")
+
+def compute_powerplay_death_ttest(df):
+    """
+    Phase 9, Test 3: paired t-test - is death-overs run rate genuinely
+    higher than powerplay run rate, innings by innings?
+    """
+    from scipy.stats import ttest_rel
+
+    def phase_rr(sub):
+        legal = (sub['valid_ball'] == 1).sum()
+        return sub['runs_total'].sum() / (legal / 6) if legal > 0 else None
+
+    pp_by_innings = df[df['over'] <= 5].groupby(['match_id', 'innings']).apply(phase_rr)
+    death_by_innings = df[df['over'] >= 15].groupby(['match_id', 'innings']).apply(phase_rr)
+
+    paired = pd.DataFrame({'pp_rr': pp_by_innings, 'death_rr': death_by_innings}).dropna()
+    t_stat, p_val = ttest_rel(paired['death_rr'], paired['pp_rr'])
+    mean_diff = round((paired['death_rr'] - paired['pp_rr']).mean(), 2)
+    return round(t_stat, 3), p_val, mean_diff, len(paired)
+
+import importlib
+import analysis
+importlib.reload(analysis)
+from analysis import compute_powerplay_death_ttest
+
+t_stat, p_val, mean_diff, n = compute_powerplay_death_ttest(df)
+print(f"t={t_stat}, p={p_val}, mean diff={mean_diff} runs/over, n={n} innings")
+
+def compute_kpis(df):
+    """Phase 10: headline KPI layer for the dashboard."""
+    teams_raw = set(df['batting_team'].unique()) | set(df['bowling_team'].unique())
+    players = set(df['batter'].unique()) | set(df['bowler'].unique()) | set(df['non_striker'].unique())
+    decided_matches = df[df['win_outcome'].notna()]['match_id'].unique()
+    regular = df[(df['innings'] <= 2) & (df['match_id'].isin(decided_matches))]
+    innings_scores = regular.groupby(['match_id', 'innings'])['team_runs'].max()
+
+    top_scorer = df.groupby('batter')['runs_batter'].sum().idxmax()
+    top_scorer_runs = df.groupby('batter')['runs_batter'].sum().max()
+    top_wkt_taker = df.groupby('bowler')['bowler_wicket'].sum().idxmax()
+    top_wkt_taker_wkts = df.groupby('bowler')['bowler_wicket'].sum().max()
+
+    return {
+        'total_matches': df['match_id'].nunique(),
+        'total_seasons': df['season_clean'].nunique(),
+        'total_teams': 15,
+        'total_players': len(players),
+        'total_runs': int(df['runs_total'].sum()),
+        'total_wickets': int(df['striker_out'].sum()),
+        'average_score': round(innings_scores.mean(), 1),
+        'highest_score': int(innings_scores.max()),
+        'top_run_scorer': f"{top_scorer} ({top_scorer_runs})",
+        'top_wicket_taker': f"{top_wkt_taker} ({top_wkt_taker_wkts})",
+        'match_decisiveness_pct': round(len(decided_matches) / df['match_id'].nunique() * 100, 1),
+    }
+
+
+def compute_powerplay_death_ttest(df):
+    """Phase 9, Test 3: paired t-test - death-overs vs powerplay run rate, innings by innings."""
+    from scipy.stats import ttest_rel
+
+    def phase_rr(sub):
+        legal = (sub['valid_ball'] == 1).sum()
+        return sub['runs_total'].sum() / (legal / 6) if legal > 0 else None
+
+    pp_by_innings = df[df['over'] <= 5].groupby(['match_id', 'innings']).apply(phase_rr, include_groups=False)
+    death_by_innings = df[df['over'] >= 15].groupby(['match_id', 'innings']).apply(phase_rr, include_groups=False)
+
+    paired = pd.DataFrame({'pp_rr': pp_by_innings, 'death_rr': death_by_innings}).dropna()
+    t_stat, p_val = ttest_rel(paired['death_rr'], paired['pp_rr'])
+    mean_diff = round((paired['death_rr'] - paired['pp_rr']).mean(), 2)
+    return round(t_stat, 3), p_val, mean_diff, len(paired)
+def compute_top_run_scorers(df, top_n=15):
+    """Business Question 4: all-time top run-scorers (sums runs_batter, not batter_runs)."""
+    runs = df.groupby('batter')['runs_batter'].sum()
+    matches = df.groupby('batter')['match_id'].nunique()
+    innings = df.groupby('batter').apply(lambda x: x[['match_id', 'innings']].drop_duplicates().shape[0], include_groups=False)
+
+    top_scorers = pd.DataFrame({
+        'total_runs': runs,
+        'matches': matches,
+        'innings': innings,
+    }).sort_values('total_runs', ascending=False).head(top_n)
+    top_scorers['avg_runs_per_innings'] = (top_scorers['total_runs'] / top_scorers['innings']).round(1)
+    return top_scorers
+def compute_top_run_scorers(df, top_n=15):
+    """
+    Business Question 4: all-time top run-scorers.
+    Sums 'runs_batter' (runs on that specific ball) - NOT 'batter_runs',
+    which is a cumulative running total within the innings and would
+    wildly overcount if summed directly.
+    """
+    runs = df.groupby('batter')['runs_batter'].sum()
+    matches = df.groupby('batter')['match_id'].nunique()
+    innings = df.groupby('batter').apply(lambda x: x[['match_id', 'innings']].drop_duplicates().shape[0])
+
+    top_scorers = pd.DataFrame({
+        'total_runs': runs,
+        'matches': matches,
+        'innings': innings,
+    }).sort_values('total_runs', ascending=False).head(top_n)
+    top_scorers['avg_runs_per_innings'] = (top_scorers['total_runs'] / top_scorers['innings']).round(1)
+    return top_scorers
+
+def compute_powerplay_death_ttest(df):
+    """Phase 9, Test 3: paired t-test - death-overs vs powerplay run rate, innings by innings."""
+    from scipy.stats import ttest_rel
+
+    def phase_rr(sub):
+        legal = (sub['valid_ball'] == 1).sum()
+        return sub['runs_total'].sum() / (legal / 6) if legal > 0 else None
+
+    pp_by_innings = df[df['over'] <= 5].groupby(['match_id', 'innings'], include_groups=False).apply(phase_rr)
+    death_by_innings = df[df['over'] >= 15].groupby(['match_id', 'innings'], include_groups=False).apply(phase_rr)
+
+    paired = pd.DataFrame({'pp_rr': pp_by_innings, 'death_rr': death_by_innings}).dropna()
+    t_stat, p_val = ttest_rel(paired['death_rr'], paired['pp_rr'])
+    mean_diff = round((paired['death_rr'] - paired['pp_rr']).mean(), 2)
+    return round(t_stat, 3), p_val, mean_diff, len(paired)
+
+def compute_powerplay_death_ttest(df):
+    """Phase 9, Test 3: paired t-test - death-overs vs powerplay run rate, innings by innings."""
+    from scipy.stats import ttest_rel
+
+    def phase_rr(sub):
+        legal = (sub['valid_ball'] == 1).sum()
+        return sub['runs_total'].sum() / (legal / 6) if legal > 0 else None
+
+    pp_by_innings = df[df['over'] <= 5].groupby(['match_id', 'innings']).apply(phase_rr, include_groups=False)
+    death_by_innings = df[df['over'] >= 15].groupby(['match_id', 'innings']).apply(phase_rr, include_groups=False)
+
+    paired = pd.DataFrame({'pp_rr': pp_by_innings, 'death_rr': death_by_innings}).dropna()
+    t_stat, p_val = ttest_rel(paired['death_rr'], paired['pp_rr'])
+    mean_diff = round((paired['death_rr'] - paired['pp_rr']).mean(), 2)
+    return round(t_stat, 3), p_val, mean_diff, len(paired)
+
+def compute_kpis(df):
+    """Phase 10: headline KPI layer for the dashboard."""
+    teams_raw = set(df['batting_team'].unique()) | set(df['bowling_team'].unique())
+    players = set(df['batter'].unique()) | set(df['bowler'].unique()) | set(df['non_striker'].unique())
+    decided_matches = df[df['win_outcome'].notna()]['match_id'].unique()
+    regular = df[(df['innings'] <= 2) & (df['match_id'].isin(decided_matches))]
+    innings_scores = regular.groupby(['match_id', 'innings'])['team_runs'].max()
+
+    top_scorer = df.groupby('batter')['runs_batter'].sum().idxmax()
+    top_scorer_runs = df.groupby('batter')['runs_batter'].sum().max()
+    top_wkt_taker = df.groupby('bowler')['bowler_wicket'].sum().idxmax()
+    top_wkt_taker_wkts = df.groupby('bowler')['bowler_wicket'].sum().max()
+
+    return {
+        'total_matches': df['match_id'].nunique(),
+        'total_seasons': df['season_clean'].nunique(),
+        'total_teams': 15,
+        'total_players': len(players),
+        'total_runs': int(df['runs_total'].sum()),
+        'total_wickets': int(df['striker_out'].sum()),
+        'average_score': round(innings_scores.mean(), 1),
+        'highest_score': int(innings_scores.max()),
+        'top_run_scorer': f"{top_scorer} ({top_scorer_runs})",
+        'top_wicket_taker': f"{top_wkt_taker} ({top_wkt_taker_wkts})",
+        'match_decisiveness_pct': round(len(decided_matches) / df['match_id'].nunique() * 100, 1),
+    }
+
