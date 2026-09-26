@@ -1,2 +1,2 @@
-*.csv filter=lfs diff=lfs merge=lfs -text
+Projects/IPL sales analaysis/data/processed/IPL_Dataset_Cleaned.csv filter=lfs diff=lfs merge=lfs -text
 Projects/IPL[[:space:]]sales[[:space:]]analaysis/data/processed/IPL_Dataset_Cleaned.csv filter=lfs diff=lfs merge=lfs -text
