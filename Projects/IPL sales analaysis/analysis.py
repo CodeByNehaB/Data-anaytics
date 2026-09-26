@@ -756,3 +756,11 @@ def compute_kpis(df):
         'match_decisiveness_pct': round(len(decided_matches) / df['match_id'].nunique() * 100, 1),
     }
 
+
+def compute_player_runs_by_season(df, players):
+    """
+    Dashboard: runs per season for a specific list of players (not a
+    top-N ranking - this is for showing exactly who was selected).
+    """
+    filtered = df[df['batter'].isin(players)]
+    return filtered.groupby(['batter', 'season_clean'])['runs_batter'].sum().reset_index()
