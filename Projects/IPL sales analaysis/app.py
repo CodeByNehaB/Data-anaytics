@@ -6,6 +6,29 @@ from analysis import compute_team_win_percentage_by_season, compute_team_scoring
 from analysis import compute_top_wicket_takers, compute_top_strike_rates, compute_top_economy_bowlers, compute_player_runs_by_season,compute_powerplay_vs_death
 from analysis import compute_toss_match_correlation, compute_chase_vs_defend, compute_venue_scoring, compute_venue_toss_advantage, compute_biggest_margins, compute_toss_chase_significance,compute_team_momentum
 
+CHART_COLORS = ["#E8A63C", "#4CAF7D", "#5B8DBA", "#C75B5B", "#8B6BC7"]
+
+
+
+
+st.markdown("""
+<style>
+[data-testid="stMetric"] {
+    background-color: #131A2E;
+    border-top: 3px solid #E8A63C;
+    border-radius: 4px;
+    padding: 16px;
+}
+[data-testid="stMetricValue"] {
+    font-size: 2rem;
+    color: #F2F3F5;
+}
+[data-testid="stMetricLabel"] {
+    color: #E8A63C;
+    font-weight: 600;
+}
+</style>
+""", unsafe_allow_html=True)
 
 st.set_page_config(page_title="IPL Performance Analytics", layout="wide", page_icon="🏏")
 
