@@ -112,3 +112,98 @@ where Salary between 75000 and 80000;
 select * from Employees
 where salary not between 65000 and 75000;
 
+--IN
+select * from Employees
+where Department in('HR', 'Finance');
+
+select * from Employees
+where Salary in (25000, 50000);
+
+---Not in
+select * from Employees 
+where EmployeeId not in (2, 5);
+
+
+-- Insert records
+select * from Employees;
+
+Insert into dbo.Employees(EmployeeId, FirstName, LastName,Department, Salary, HireDate)
+values(6, 'Aradhya', 'Mehra', 'IT', 80000.00, '2022-12-15'),
+(7, 'Vihann', 'Sharma', 'Marketing',78000.00,'2026-1-28');
+
+-- want to add full name and id
+INSERT INTO dbo.Employees (EmployeeId, FirstName, LastName)
+values(8, 'Rohit', 'Mehra');
+
+--- inserting all recodrs in th table
+Insert into dbo.Employees
+values(9, 'Mahesh', 'Naran','Finance', 73000.00, '2025-1-24');
+
+
+select * from Employees
+
+--Null Values
+insert into dbo.Employees
+values(10, 'Jay', '', 'HR',73000,'2022-05-09');
+
+--1 find those reocrds where department is null
+select * from Employees
+where Department is null;
+
+--2 find those reocdrs where department is not null
+select * from Employees
+where Department is not null;
+
+-- upadte statement
+--1 create a temp table for update
+select * into #1 from dbo.Employees;
+
+select * from #1;
+
+
+--1 update those recodrs where department is null
+update #1
+set Department = 'Hr'
+where Department is null;
+
+--2 update salary and hire date  where  emp id is 7
+update #1
+set salary =85000 ,Hiredate ='2025-12-28'
+where EmployeeId =8;
+
+
+-- delete vs drop vs truncate
+select * from Employees;
+
+
+-- create a temp table for deletion
+select * into #temp1 from dbo.Employees;
+
+--delete records where id =2
+delete from #temp1
+where EmployeeId =2;
+
+select * from #temp1;
+
+--delete mulitple rows
+delete from #temp1
+where Department = 'HR';
+
+--delete all records
+delete from #temp1;
+
+-- TRUNCATE COMMAND
+select * into #temp2 from Employees;
+
+select * from #temp2;
+
+TRUNCATE TABLE #temp2;
+
+--drop commnad
+select * from #temp1;
+
+drop table #temp1;
+
+
+
+
