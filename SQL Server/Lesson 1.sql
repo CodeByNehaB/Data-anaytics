@@ -32,7 +32,23 @@ Values
 
 --- SELECT STATEMENT
 ---1. select all employee from table
+-- commnets-
+select * from Employees;
 
+--TOP CLAUSE
+select top 3 *  from Employees;
+
+--1 top 3  salary highest salary
+select top 3  salary from Employees 
+order by salary desc;
+
+
+--2 top 3 lowest salary
+select top 3 salary from Employees
+order by Salary asc;
+
+--top with with percentage
+select top (3) percent * from Employees;
 SELECT * FROM Employees;
 
 --2 select fristname from the table
