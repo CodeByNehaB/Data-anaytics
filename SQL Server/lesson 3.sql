@@ -159,4 +159,113 @@ where c.city = 'Bilaspur';
 
 select * from Customers;
 
---
+--RIGHT JOIN
+--display all store name and customer name using right outer join
+select store_name, customer_name
+from Customers c
+right join Stores s
+on c.customer_id = s.customer_id;
+
+--disply all sotre montly sale and cutomer name
+select customer_name , monthly_sales
+from Customers c
+right join Stores s
+on c.customer_id = s.customer_id;
+
+--Display all stores with their customer names and membership types, sorted by monthly sales in descending order.
+
+select customer_name, membership , monthly_sales
+from Customers c
+right join Stores s
+on c.customer_id = s.customer_id
+order by monthly_sales desc;
+
+
+
+---Find stores that have no matching customer.
+SELECT
+    s.store_id,
+    s.store_name,
+    c.customer_name
+FROM Customers c
+RIGHT OUTER JOIN Stores s
+    ON c.customer_id = s.customer_id
+WHERE c.customer_id IS NULL;
+
+
+--Display all stores and show No Customer instead of NULL when no customer matches.
+SELECT
+    s.store_id,
+    s.store_name,
+    ISNULL(c.customer_name, 'No Customer') AS customer_name,
+    s.category,
+    s.monthly_sales
+FROM Customers c
+RIGHT OUTER JOIN Stores s
+    ON c.customer_id = s.customer_id;
+
+
+    --FULL OUTER JOIN
+    --Write a SQL Server query to display all customers and all stores, including unmatched records, and show No Customer when the customer name is missing.
+    select store_id,
+    c.customer_id, 
+    store_name,
+   isnull(customer_name, 'No Customer') as customer_name
+   from stores s
+   full outer join customers c
+   on c.customer_id = s.customer_id;
+
+   --diaplya ll customer name and  stroe name
+   select customer_name, store_name
+   from Customers c
+   full outer join Stores s
+   on c.customer_id = s.customer_id;
+
+   --: Find customers without stores AND stores without customers
+   select c.customer_id, customer_name, store_id, store_name
+   from Customers c
+   full outer join Stores s
+   on c.customer_id = s.customer_id
+   where c.customer_id is null 
+   OR
+   s.customer_id is null;
+
+
+   --SELF JOIN
+   --find customer living in same city
+   select c1.customer_name as customer1,
+   c2.customer_name as customer2,
+   c1.city
+   from Customers c1
+   join Customers c2
+   on c1.customer_id = c2.customer_id;
+
+   --UNION
+   --Combine customer cities and store cities, removing duplicates
+   select c.city from Customers c
+   union
+   select s.city from Stores s;
+
+   --Combine customer names and store names into one column using UNION.
+   select customer_name from Customers
+   union
+   select store_name from Stores;
+
+   --UNION ALL
+   --Combine customer cities and store cities, keeping duplicates.
+   select c.city from Customers c
+   union all
+   select s.city from Stores s;
+
+
+   --Combine customer cities from Bilaspur and Raipur with store cities from Bilaspur and Raipur, retaining duplicates.
+   select city from Customers 
+   where city IN('Bilaspur','Raipur')
+   union all
+   select city from stores
+   where city in('Bilaspur', 'Raipur');
+
+   --Use UNION to combine customers' city values with stores' city values, then count the number of distinct cities.
+  select count(*) as total_city from  (select city from Customers
+   union 
+   select city from Stores) as cityList;
