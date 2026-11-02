@@ -1,0 +1,127 @@
+{
+  "name": "Gifting Analytics Dark",
+  "dataColors": [
+    "#22D3EE",
+    "#FBBF24",
+    "#34D399",
+    "#A78BFA",
+    "#F472B6",
+    "#F87171",
+    "#60A5FA",
+    "#94A3B8"
+  ],
+  "background": "#14213A",
+  "foreground": "#E8EEF7",
+  "tableAccent": "#22D3EE",
+  "good": "#34D399",
+  "neutral": "#FBBF24",
+  "bad": "#F87171",
+  "maximum": "#22D3EE",
+  "center": "#FBBF24",
+  "minimum": "#24385E",
+  "null": "#8FA3C4",
+  "textClasses": {
+    "callout": {
+      "fontSize": 28,
+      "fontFace": "Segoe UI Semibold",
+      "color": "#22D3EE"
+    },
+    "title": {
+      "fontSize": 13,
+      "fontFace": "Segoe UI Semibold",
+      "color": "#E8EEF7"
+    },
+    "header": {
+      "fontSize": 12,
+      "fontFace": "Segoe UI Semibold",
+      "color": "#E8EEF7"
+    },
+    "label": {
+      "fontSize": 10,
+      "fontFace": "Segoe UI",
+      "color": "#8FA3C4"
+    }
+  },
+  "visualStyles": {
+    "*": {
+      "*": {
+        "title": [
+          {
+            "show": true,
+            "fontColor": { "solid": { "color": "#E8EEF7" } },
+            "fontSize": 13,
+            "fontFamily": "Segoe UI Semibold"
+          }
+        ],
+        "background": [
+          {
+            "show": true,
+            "color": { "solid": { "color": "#14213A" } },
+            "transparency": 0
+          }
+        ],
+        "border": [
+          {
+            "show": true,
+            "color": { "solid": { "color": "#24385E" } },
+            "radius": 8
+          }
+        ],
+        "dropShadow": [
+          {
+            "show": false
+          }
+        ]
+      }
+    },
+    "page": {
+      "*": {
+        "background": [
+          {
+            "color": { "solid": { "color": "#0B1426" } },
+            "transparency": 0
+          }
+        ],
+        "outspace": [
+          {
+            "color": { "solid": { "color": "#0B1426" } }
+          }
+        ]
+      }
+    },
+    "card": {
+      "*": {
+        "labels": [
+          {
+            "color": { "solid": { "color": "#22D3EE" } },
+            "fontSize": 24
+          }
+        ],
+        "categoryLabels": [
+          {
+            "show": true,
+            "color": { "solid": { "color": "#8FA3C4" } },
+            "fontSize": 10
+          }
+        ]
+      }
+    },
+    "slicer": {
+      "*": {
+        "header": [
+          {
+            "show": true,
+            "fontColor": { "solid": { "color": "#8FA3C4" } },
+            "background": { "solid": { "color": "#14213A" } }
+          }
+        ],
+        "items": [
+          {
+            "fontColor": { "solid": { "color": "#E8EEF7" } },
+            "background": { "solid": { "color": "#14213A" } }
+          }
+        ]
+      }
+    }
+  }
+}
