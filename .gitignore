@@ -1,12 +1,14 @@
-.ipynb_checkpoints/
-Projects/COVID-19 Data Analysis/*.xlsx
-Projects/COVID-19 Data Analysis/*.csv
-# Large datasets
+
+# Ignore large datasets
 *.csv
 *.xlsx
+
+# Ignore processed data
+**/data/processed/
 
 # Temporary files
 *.tmp
 __pycache__/
 .ipynb_checkpoints/
+
 
