@@ -4,7 +4,7 @@
 
 > **Data disclosure:** this project uses the public **UCI Online Retail II** dataset (a UK online gift-ware retailer, Dec 2009 to Dec 2011). It is **not** real IKEA data. The business scenario is framed as a gifting retailer analytics initiative, and every number below comes from that public dataset.
 
-Author: Neha Bawankar  |  GitHub: `<your-link>`  |  LinkedIn: `<your-link>`
+Author: Neha Bawankar  |
 
 ---
 
@@ -127,13 +127,13 @@ A dark-themed, two-page interactive dashboard with six slicers (Month, Quarter, 
 
 | Finding | Number |
 |---|---|
-| Total revenue / customers / orders | £17.37M / 5,878 / 36,969 |
-| Average revenue per customer / per order | £2,956 / £470 |
+| Total revenue / customers / orders | $17.37M / 5,878 / 36,969 |
+| Average revenue per customer / per order | $2,956 / $470 |
 | **Champions** | 1,291 customers (22%) generate **68.1%** of revenue |
-| Champions' average customer value | £9,169, about 5x the next segment |
+| Champions' average customer value | $9,169, about 5x the next segment |
 | **Churn rate** (no purchase in 90+ days) | **50.85%** (2,989 customers) |
 | **Lost** customers | 1,522 customers (26%) but only **3.8%** of revenue |
-| **At Risk** customers | 821 customers holding **£1.59M** (9.1% of revenue): the best win-back target |
+| **At Risk** customers | 821 customers holding **$1.59M** (9.1% of revenue): the best win-back target |
 | **Seasonality** | Revenue peaks in Oct and Nov of both years (Nov 2010: £1.17M, Nov 2011: £1.16M); Q4 is about 36% of all revenue |
 | **Geography** | United Kingdom brings in about 83% of revenue (£14.39M); next are EIRE, Netherlands and Germany |
 | Churn by year | 40.2% (2009), 56.3% (2010), 31.5% (2011) |
