@@ -110,29 +110,19 @@ CREATE TABLE Customers(
 );
 
 --insert data into customer table
-INSERT INTO CUSTOMERS
-(CUSTOMERID, CUSTOMERNAME, CITY)
-VALUES
-(201, 'Rahul Sharma', 'Delhi'),
-(202, 'Priya Verma', 'Mumbai'),
-(203, 'Amit Kumar', 'Bhopal'),
-(204, 'Sneha Patel', 'Indore'),
-(205, 'Rohit Singh', 'Jaipur'),
-(206, 'Anjali Gupta', 'Pune'),
-(207, 'Vikas Yadav', 'Jabalpur'),
-(208, 'Neha Joshi', 'Nagpur'),
-(209, 'Arjun Mehta', 'Surat'),
-(210, 'Pooja Mishra', 'Lucknow'),
-(211, 'Karan Das', 'Kolkata'),
-(212, 'Simran Kaur', 'Chandigarh'),
-(213, 'Mohit Jain', 'Gwalior'),
-(214, 'Riya Shah', 'Ahmedabad'),
-(215, 'Deepak Roy', 'Ranchi'),
-(216, 'Kavita Rao', 'Hyderabad'),
-(217, 'Suresh Nair', 'Kochi'),
-(218, 'Meena Thakur', 'Rewa'),
-(219, 'Varun Soni', 'Ujjain'),
-(220, 'Aarti Desai', 'Vadodara');
+INSERT INTO Customers VALUES
+(1,'Rahul Sharma','Delhi'),
+(2,'Priya Verma','Mumbai'),
+(3,'Amit Kumar','Bhopal'),
+(4,'Sneha Patel','Indore'),
+(5,'Rohit Singh','Pune'),
+(6,'Anjali Gupta','Delhi'),
+(7,'Vikas Yadav','Jaipur'),
+(8,'Neha Joshi','Mumbai'),
+(9,'Karan Mehta','Indore'),
+(10,'Pooja Mishra','Bhopal'),
+(11,'Simran Kaur','Chandigarh'),
+(12,'Mohit Jain','Jaipur');
 
 select * from Customers;
 
@@ -145,30 +135,29 @@ CREATE TABLE Orders(
  FOREIGN KEY(CustomerId) REFERENCES Customers(CustomerID)
 );
 
-
-INSERT INTO ORDERS
-(ORDERID, CUSTOMERID, ORDERDATE, PRODUCTID)
+INSERT INTO Orders
+(OrderId, CustomerID, OrderDate, ProductID)
 VALUES
-(301, 201, '2026-01-05', 501),
-(302, 202, '2026-01-07', 502),
-(303, 203, '2026-01-10', 503),
-(304, 204, '2026-01-12', 504),
-(305, 205, '2026-01-15', 505),
-(306, 206, '2026-01-18', 506),
-(307, 207, '2026-01-20', 507),
-(308, 208, '2026-01-22', 508),
-(309, 209, '2026-01-25', 509),
-(310, 210, '2026-01-28', 510),
-(311, 211, '2026-02-01', 501),
-(312, 212, '2026-02-03', 502),
-(313, 213, '2026-02-05', 503),
-(314, 214, '2026-02-08', 504),
-(315, 215, '2026-02-10', 505),
-(316, 216, '2026-02-12', 506),
-(317, 217, '2026-02-15', 507),
-(318, 218, '2026-02-18', 508),
-(319, 219, '2026-02-20', 509),
-(320, 220, '2026-02-22', 510);
+(101, 1, '2026-01-05', 501),
+(102, 2, '2026-01-07', 502),
+(103, 3, '2026-01-10', 503),
+(104, 4, '2026-01-12', 504),
+(105, 5, '2026-01-15', 505),
+(106, 1, '2026-01-18', 506),
+(107, 2, '2026-01-20', 507),
+(108, 6, '2026-01-22', 508),
+(109, 7, '2026-01-25', 509),
+(110, 3, '2026-01-28', 510),
+(111, 8, '2026-02-01', 501),
+(112, 9, '2026-02-03', 502),
+(113, 1, '2026-02-05', 503),
+(114, 10, '2026-02-08', 504),
+(115, 5, '2026-02-10', 505),
+(116, 11, '2026-02-12', 506),
+(117, 12, '2026-02-15', 507),
+(118, 6, '2026-02-18', 508),
+(119, 3, '2026-02-20', 509),
+(120, 9, '2026-02-22', 510);
 
 select * from Orders;
 
@@ -185,25 +174,82 @@ INSERT INTO Products
 VALUES
 (501, 'Laptop', 55000),
 (502, 'Smartphone', 25000),
-(503, 'Headphones', 1500),
-(504, 'Keyboard', 1200),
-(505, 'Mouse', 600),
-(506, 'Monitor', 12000),
-(507, 'Printer', 8500),
-(508, 'Tablet', 18000),
+(503, 'Headphones', 2000),
+(504, 'Keyboard', 1500),
+(505, 'Mouse', 800),
+(506, 'Monitor', 15000),
+(507, 'Printer', 12000),
+(508, 'Tablet', 22000),
 (509, 'Smart Watch', 5000),
-(510, 'Speaker', 2500),
+(510, 'Speaker', 4500),
 (511, 'Power Bank', 1200),
-(512, 'USB Drive', 500),
+(512, 'USB Drive', 600),
 (513, 'Hard Disk', 4500),
-(514, 'Webcam', 2200),
+(514, 'Webcam', 3000),
 (515, 'Microphone', 3500),
 (516, 'Router', 2800),
-(517, 'SSD', 6000),
-(518, 'Projector', 22000),
-(519, 'Gaming Chair', 15000),
-(520, 'Bluetooth Earbuds', 3000);
+(517, 'SSD', 6500),
+(518, 'Projector', 30000),
+(519, 'Gaming Chair', 18000),
+(520, 'Bluetooth Earbuds', 3500); 
 
 select * from Products;
 
 
+--1)Write a query to find the name of customer who placed order
+SELECT CustomerName from Customers C
+inner join Orders O
+on O.CustomerID =C.CustomerID;
+
+
+--2) find the list of customer who have not placed any orders.
+Select * from Customers c
+left join Orders o 
+on o.CustomerID = c.CustomerID
+where o.OrderId is null;
+
+
+--3)list all order along with the product name and price
+ SELECT  ProductName , price
+ from Orders o
+ join Products p
+ on o.ProductID = p.ProductID;
+
+ --find the name of customer nad their order ,including customer who have not place any order
+select distinct customerName, OrderID FROM Customers c left join Orders o 
+on o.CustomerID = c.CustomerID ;
+
+--5) find the total number of order placed by each customer
+select customerName , count(orderId) 
+from Customers c
+inner join Orders o
+ on o.CustomerID = c.CustomerID
+ group by CustomerName;
+
+
+ --6) Indentify pair of customer who live in the same country
+ select c1.CustomerName, c2.CustomerName from Customers c1
+ join Customers c2 
+ on c1.City = c2.City
+ and c1.CustomerID <> c2.CustomerID;
+
+ --7) find the customr who has spent the most on thier orders
+ select CustomerName, SUM(Price) as [Amount Spent] from Customers c 
+ inner join Orders o
+ on c.CustomerID = o.CustomerID
+ inner join Products p
+ on p.productId = o.ProductID
+ group by CustomerName;
+
+ --8) find customer who have ordered more than one tuye pof products
+
+
+ --9) list of all procut and thier corresponding order, using a right join , including product that hvae never been ordered.
+
+
+ --10) retrive all order placed by customer from the usa.
+
+ --11) find the name of cutomer who have orderd a product priced abouve $500,
+
+
+ --12) find customer who have ordered the same product more than once.
