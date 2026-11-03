@@ -149,3 +149,6 @@ insert into test_default values(1, 'Nititn','Jian', 23);
 
 insert into test_default (Id, lastName, age) values(1,'Jian', 23);
 
+--ORDER OF EXECUTIon
+
+SELECT * FROM employee_details;
