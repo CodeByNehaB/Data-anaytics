@@ -242,14 +242,36 @@ inner join Orders o
  group by CustomerName;
 
  --8) find customer who have ordered more than one tuye pof products
-
+ SELECT CustomerName, count(ProductID) FROM Customers c
+ join Orders o 
+ on c.CustomerID = o.CustomerID
+ group by CustomerName
+ having count(ProductID) > 1;
 
  --9) list of all procut and thier corresponding order, using a right join , including product that hvae never been ordered.
+ select OrderId, p.ProductID, p.ProductName from Orders o
+ right join Products p
+ on o.ProductID = p.ProductID;
 
+ --10) retrive all order placed by customer from the mumbai.
+ select * from Customers c
+ inner join Orders o
+ on c.CustomerID = o.CustomerID
+ where city in ('Mumbai');
 
- --10) retrive all order placed by customer from the usa.
+ 
 
  --11) find the name of cutomer who have orderd a product priced abouve $500,
-
+ select * from Customers c
+ inner join Orders o
+ on c.CustomerID = o.CustomerID
+ inner join Products p
+ on p.ProductID = o.ProductID
+ where Price >50000;
 
  --12) find customer who have ordered the same product more than once.
+ select CustomerName, ProductID, count(orderId) as counts from Customers c
+ inner join Orders o
+ on c.CustomerID = o.CustomerID
+ group by CustomerName, ProductID
+ having count(orderId) >1;
